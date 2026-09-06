@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   database:
     image: postgres:16
@@ -21,11 +19,11 @@ services:
   adminer:
     image: adminer
     ports:
-      - published: 8080
+      - published: 8070
         target: 8080
     environment:
       ADMINER_DESIGN: dracula
-      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DEFAULT_SERVER: database
 
 volumes:
   data:

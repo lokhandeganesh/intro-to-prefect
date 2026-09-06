@@ -7,13 +7,21 @@ the `complete` branch.
 ## Setup
 
 ```shell
-python -m venv .venv
-source .venv/bin/activate
-pip install -e '.[dev]'
-pre-commit install
+uv sync --all-groups
+uv run pre-commit install
+
 docker-compose up -d
-prefect config set PREFECT_API_URL="http://127.0.0.1:4200/api"
-prefect server start
+
+uv run prefect config set PREFECT_SERVER_ANALYTICS_ENABLED=false
+uv run prefect config set PREFECT_API_URL="http://127.0.0.1:4200/api"
+
+uv run prefect server start
+```
+
+## Running test cases
+
+```shell
+uv run pytest --cache-clear
 ```
 
 ## Teardown

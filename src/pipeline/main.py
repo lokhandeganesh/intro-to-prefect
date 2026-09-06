@@ -1,8 +1,84 @@
 #!/usr/bin/env python3
+import httpx
+import psycopg2
+from prefect import flow, get_run_logger, task
+
+
+@task
+def retrieve_from_api(base_url: str, path: str, secure: bool):
+    logger = get_run_logger()
+
+    if secure:
+        url = f"https://{base_url}/{path}"
+    else:
+        url = f"http://{base_url}/{path}"
+
+    response = httpx.get(url)
+
+    response.raise_for_status()
+    inventory_stats = response.json()
+
+    # logger.info(inventory_stats)
+    logger.info("data fetched from API")
+
+    return inventory_stats
+
+
+@task
+def clean_stats_data(inventory_stats: dict) -> dict:
+    return {
+        "sold": inventory_stats.get("sold", 0) + inventory_stats.get("SOLD", 0),
+        "available": inventory_stats.get("avalible", 0)
+        + inventory_stats.get("available", 0)
+        + inventory_stats.get("avaliable", 0),
+        "unavailable": inventory_stats.get("unavailable", 0)
+        + inventory_stats.get("Not Available", 0),
+        "pending": inventory_stats.get("pending", 0) + inventory_stats.get("Pending", 0),
+    }
+
+
+@task
+def insert_to_db(
+    inventory_stats: dict, db_host: str, db_user: str, db_pass: str, db_name: str
+):
+    with (
+        psycopg2.connect(
+            user=db_user, password=db_pass, dbname=db_name, host=db_host
+        ) as conn,
+        conn.cursor() as cur,
+    ):
+        cur.execute(
+            """
+            INSERT INTO inventory_history
+                (fetch_timestamp, sold, pending, available, unavailable)
+            VALUES
+                (NOW(), %(sold)s, %(pending)s, %(available)s, %(unavailable)s)
+            """, inventory_stats
+        )
+
+        logger = get_run_logger()
+        logger.info("data inserted into database")
+
+
+
+@flow
+def collect_petstore_inventory(
+    base_url: str = "petstore.swagger.io",
+    path: str = "v2/store/inventory",
+    secure: bool = True,
+    db_host: str ="localhost",
+    db_user: str = "root",
+    db_pass: str ="root",
+    db_name: str = "petstore"
+):
+    inventory_stats = retrieve_from_api(base_url, path, secure)
+
+    inventory_stats = clean_stats_data(inventory_stats)
+    insert_to_db(inventory_stats, db_host, db_user, db_pass, db_name)
 
 
 def main():
-    print("hello world")
+    collect_petstore_inventory.serve("petstore-collection-deployment")
 
 
 if __name__ == "__main__":
