@@ -28,8 +28,8 @@ def retrieve_from_api(base_url: str, path: str, secure: bool):
 def clean_stats_data(inventory_stats: dict) -> dict:
     return {
         "sold": inventory_stats.get("sold", 0) + inventory_stats.get("SOLD", 0),
-        "available": inventory_stats.get("avalible", 0)
-        + inventory_stats.get("available", 0)
+        "available": inventory_stats.get("available", 0)
+        + inventory_stats.get("Available", 0)
         + inventory_stats.get("avaliable", 0),
         "unavailable": inventory_stats.get("unavailable", 0)
         + inventory_stats.get("Not Available", 0),
