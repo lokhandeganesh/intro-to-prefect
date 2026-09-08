@@ -3,8 +3,12 @@ import httpx
 import psycopg2
 from prefect import flow, get_run_logger, task
 
+from utils.track_memory import track
+from utils.track_peak_memory import get_system_peak_memory, log_final_peak
+
 
 @task
+@track
 def retrieve_from_api(base_url: str, path: str, secure: bool):
     logger = get_run_logger()
 
@@ -25,12 +29,13 @@ def retrieve_from_api(base_url: str, path: str, secure: bool):
 
 
 @task
+@track
 def clean_stats_data(inventory_stats: dict) -> dict:
     return {
         "sold": inventory_stats.get("sold", 0) + inventory_stats.get("SOLD", 0),
-        "available": inventory_stats.get("available", 0)
-        + inventory_stats.get("Available", 0)
-        + inventory_stats.get("avaliable", 0),
+        "available": inventory_stats.get("avaliable", 0)
+        + inventory_stats.get("available", 0)
+        + inventory_stats.get("avalible", 0),
         "unavailable": inventory_stats.get("unavailable", 0)
         + inventory_stats.get("Not Available", 0),
         "pending": inventory_stats.get("pending", 0) + inventory_stats.get("Pending", 0),
@@ -38,6 +43,7 @@ def clean_stats_data(inventory_stats: dict) -> dict:
 
 
 @task
+@track
 def insert_to_db(
     inventory_stats: dict, db_host: str, db_user: str, db_pass: str, db_name: str
 ):
@@ -61,7 +67,7 @@ def insert_to_db(
 
 
 
-@flow
+@flow(on_completion=[log_final_peak])
 def collect_petstore_inventory(
     base_url: str = "petstore.swagger.io",
     path: str = "v2/store/inventory",
@@ -76,9 +82,14 @@ def collect_petstore_inventory(
     inventory_stats = clean_stats_data(inventory_stats)
     insert_to_db(inventory_stats, db_host, db_user, db_pass, db_name)
 
-
+@track
 def main():
     collect_petstore_inventory.serve("petstore-collection-deployment")
+
+    # peak_str, peak_bytes = get_system_peak_memory()
+    # print("True MAXIMUM PROCESS PEAK:-")
+    # print(f"Human readable: {peak_str}")
+    # print(f"Raw math bytes: {peak_bytes}")
 
 
 if __name__ == "__main__":
