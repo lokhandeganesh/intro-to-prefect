@@ -1,0 +1,29 @@
+automations:
+  - name: Cancel Long Running Flows
+    description: Cancels flows running longer than 30 minutes
+    enabled: true
+    trigger:
+      type: event
+      posture: Reactive
+      expect:
+        - prefect.flow-run.Running
+      threshold: 1
+      within: 300
+      for_each:
+        - prefect.resource.id
+    actions:
+      - type: cancel-flow-run
+
+  - name: Notify on Flow Failure
+    description: Send notification when flows fail
+    enabled: true
+    trigger:
+      type: event
+      posture: Reactive
+      expect:
+        - prefect.flow-run.Failed
+      threshold: 1
+    actions:
+      - type: send-notification
+        subject: "Flow Failed: {{ event.resource.name }}"
+        body: "Flow run {{ event.resource.name }} has failed."
