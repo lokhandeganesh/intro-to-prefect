@@ -1,0 +1,5 @@
+https://docs.prefect.io/v3/concepts
+
+https://www.prefect.io/blog/workflow-design-patterns
+
+https://github.com/PrefectHQ/prefect-demos/tree/main/flows/aws/datalake
