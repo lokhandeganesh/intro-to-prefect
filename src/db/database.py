@@ -16,7 +16,7 @@ def get_engine() -> Engine:
     Loads the Prefect block and returns the SQLAlchemy Engine.
     lru_cache ensures this executes only ONCE per process runtime.
     """
-    connector = SqlAlchemyConnector.load(settings.block_name)
+    connector = SqlAlchemyConnector.load(settings.database_block_name)
     return connector.get_engine()
 
 

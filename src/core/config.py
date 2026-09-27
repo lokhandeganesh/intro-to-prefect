@@ -8,7 +8,12 @@ class Settings(BaseSettings):
     database_name: str
     database_username: str
 
-    block_name: str
+    database_block_name: str
+    app_name: str
+    # log_level: str
+
+    teams_webhook_url: str
+    teams_block_name: str
 
     class Config:
         env_file = ".env"

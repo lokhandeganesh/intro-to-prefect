@@ -1,0 +1,15 @@
+# kubernetes deployment / rancher workload spec:
+spec:
+  template:
+    spec:
+      containers:
+        - name: prefect-worker
+          image: your-prefect-image:latest
+          env:
+            # If a task failed intermittently we can set the log level
+            # - name: LOG_LEVEL
+            #   value: "DEBUG"
+
+            # Tell Prefect's standard console handler to output JSON instead of text
+            - name: PREFECT_LOGGING_HANDLERS_CONSOLE_FORMATTER
+              value: "json"
